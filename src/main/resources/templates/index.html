@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TinyMX — Shorten your links</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+  <main class="page">
+    <nav class="nav"><a class="brand" href="/">tiny<span>mx</span></a><span class="nav-note">Simple links. Clean sharing.</span></nav>
+    <section class="hero">
+      <div class="eyebrow"><span class="dot"></span> YOUR LINK, MADE SMALLER</div>
+      <h1>Long links.<br><span>Less baggage.</span></h1>
+      <p class="subheading">Make a clean, shareable link in seconds.</p>
+      <form class="shorten-form" method="post" action="/shorten">
+        <label for="url">Paste your long URL</label>
+        <input id="url" name="url" type="text" placeholder="https://example.com/my-very-long-link" required maxlength="2048">
+        <div class="form-bottom"><div class="slug-field"><span>tiny.mx/</span><input name="slug" maxlength="30" pattern="[a-zA-Z0-9_-]{3,30}" placeholder="custom-slug (optional)"></div><button type="submit">Shorten link <span>↗</span></button></div>
+      </form>
+      <div class="notice success" th:if="${shortLink}"><div><strong>Your short link is ready</strong><a th:href="${shortLink}" th:text="${shortLink}"></a><small th:text="${originalUrl}"></small></div><button type="button" class="copy-button" onclick="copyLink()">Copy</button><input type="hidden" id="createdLink" th:value="${shortLink}"></div>
+      <p class="error" th:if="${error}" th:text="${error}"></p>
+    </section>
+    <section class="ai-card"><div class="ai-icon">✳</div><div class="ai-content"><h2>Give your link a little context</h2><p>Use Gemini AI to suggest a title and description for a link.</p><div class="ai-form"><input id="aiUrl" type="url" placeholder="https://example.com/article"><input id="aiContext" type="text" placeholder="Optional context (e.g. article for class)"><button type="button" id="aiButton" onclick="getInsight()">Generate with AI</button></div><pre id="aiResult" class="ai-result" hidden></pre></div></section>
+    <section class="recent" th:if="${!recentUrls.isEmpty()}"><div class="section-heading"><h2>Recently shortened</h2><span>Latest 10 links</span></div><div class="link-list"><article class="link-row" th:each="item : ${recentUrls}"><div class="link-details"><a th:href="@{'/' + ${item.shortCode}}" th:text="${'/' + item.shortCode}"></a><p th:text="${item.originalUrl}"></p></div><time th:text="${#temporals.format(item.createdAt, 'dd MMM yyyy')}"></time></article></div></section>
+    <footer><span>tiny<span class="footer-accent">mx</span></span><span>Crafted By Srinivas Swaroop</span></footer>
+  </main>
+<script>
+async function copyLink(){const field=document.getElementById('createdLink');if(!field)return;try{await navigator.clipboard.writeText(field.value);document.querySelector('.copy-button').textContent='Copied!';}catch(e){window.prompt('Copy your short link:',field.value);}}
+async function getInsight(){const url=document.getElementById('aiUrl').value.trim();const context=document.getElementById('aiContext').value.trim();const result=document.getElementById('aiResult');const button=document.getElementById('aiButton');if(!url){result.hidden=false;result.textContent='Enter a URL first.';return;}button.disabled=true;button.textContent='Working…';result.hidden=false;result.textContent='Asking Gemini…';try{const response=await fetch('/api/ai/link-insight',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,context})});const data=await response.json();result.textContent=data.insight||data.error||'No result returned.';}catch(e){result.textContent='Could not reach the server. Try again.';}finally{button.disabled=false;button.textContent='Generate with AI';}}
+</script>
+</body></html>
